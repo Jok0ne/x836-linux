@@ -37,6 +37,8 @@ This repo turns the **X836 7-inch pocket laptop** (aka Topton L4 / GTZS / WOPOW 
 **Broken (hardware/BIOS, not fixable from userspace):**
 - Internal Intel 7265 WiFi (D3cold PCI bug) · HDMI audio
 
+> ⚠️ **If your unit has Intel 7265, internal WiFi will NOT work under Linux.** This is a hardware/firmware-level issue (PCIe D3cold wake), not a driver bug — no kernel parameter or module option fixes it. Plan for a USB WiFi adapter (`RTL8812BU` tested). Some units ship with Realtek RTL8821CE instead — that one has the same issue on this board.
+
 **Installation:**
 
 ```bash
@@ -46,7 +48,7 @@ sudo ./setup.sh --dry-run   # see what will change
 sudo ./setup.sh             # apply everything
 ```
 
-After reboot: a Debian 12 + Phosh touch tablet you'd actually want to use.
+**After reboot: a Debian 12 + Phosh touch tablet you'd actually want to use.**
 
 ---
 
@@ -397,9 +399,35 @@ Mixer gets reset on session start. Ensure the systemd service calling `fix-audio
 - [ES8336 SOF Wiki](https://github.com/thesofproject/linux/wiki/ES8336-support)
 - [`setup_var.efi`](https://github.com/datasone/setup_var.efi) — BIOS variable editor
 
-## References
+## Future work
 
-Found a fix for the internal WiFi? Got audio working differently? Open an issue or PR — this guide grows with every reported unit.
+Things worth chasing — open issue / PR if you've cracked any of these:
+
+- **BIOS unlock** — extract the hidden Advanced tab via `UEFITool` IFR + `setup_var.efi`. The BIOS dump is available on request.
+- **D3cold WiFi fix** — determine which BIOS variable disables the broken PCIe power state, flip it, document the procedure.
+- **ACPI patching** — clean DSDT overrides to hide the ghost devices (GPS, NFC, fingerprint, LTE) so drivers stop probing them.
+- **HDMI audio** — the IPC pipeline mismatch on SOF. Upstream SOF thread is stale.
+- **Full `debootstrap` installer script** — currently documented, not scripted. A `install-debian.sh` that runs from any live Linux would close the loop.
+- **Photo gallery** — more real-world units with different brand stickers to help readers identify their hardware.
+
+## Contributing
+
+Got a different WiFi chip? A BIOS dump from a rev we haven't seen? A fix for Intel 7265? Please open an issue with this info:
+
+```
+- Brand sticker / seller:    (Topton / GTZS / WOPOW / KAISERINC / …)
+- Board name:                (sudo dmidecode -s baseboard-product-name)
+- CPU:                       (grep 'model name' /proc/cpuinfo | head -1)
+- Display resolution:        (xrandr --query | grep ' connected')
+- Audio codec:               (aplay -l)
+- WiFi chip:                 (lspci | grep -i network   OR   lsusb)
+- Kernel:                    (uname -r)
+- Distro:                    (lsb_release -d)
+- What works:
+- What doesn't:
+```
+
+PRs welcome — please keep the style and scope of the existing sections. Fixes that add platform-specific secrets/paths will be asked to use placeholders before merge.
 
 ## License
 
