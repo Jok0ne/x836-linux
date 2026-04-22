@@ -13,16 +13,40 @@
 </p>
 
 <p align="center">
+  <a href="#tldr">TL;DR</a> ·
   <a href="#the-story">Story</a> ·
   <a href="#the-device">Device</a> ·
   <a href="#is-this-your-device">Is this yours?</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#what-works--what-doesnt">Status</a> ·
   <a href="#the-fixes">Fixes</a> ·
-  <a href="#hardware-deep-dive">Deep-Dive</a> ·
+  <a href="#why-this-device-is-weird">Why it's weird</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
   <a href="#references">Refs</a>
 </p>
+
+---
+
+## TL;DR
+
+This repo turns the **X836 7-inch pocket laptop** (aka Topton L4 / GTZS / WOPOW / KAISERINC … same HW, dozens of stickers) into a **usable Linux device** — stable, 27-second boot, working touch, audio, rotation, and TrackPoint.
+
+**Working:**
+- Touchscreen · Display rotation · Audio (speaker) · TrackPoint (with fix) · Webcam · Bluetooth · Lid switch · USB WiFi · Keyboard
+
+**Broken (hardware/BIOS, not fixable from userspace):**
+- Internal Intel 7265 WiFi (D3cold PCI bug) · HDMI audio
+
+**Installation:**
+
+```bash
+sudo apt install -t bookworm-backports linux-image-amd64   # SOF audio needs a newer kernel
+git clone https://github.com/Jok0ne/x836-linux-guide.git && cd x836-linux-guide
+sudo ./setup.sh --dry-run   # see what will change
+sudo ./setup.sh             # apply everything
+```
+
+After reboot: a Debian 12 + Phosh touch tablet you'd actually want to use.
 
 ---
 
@@ -99,17 +123,48 @@ If CPU/board differ → Rev A or B → see vitor.io for J3455 or the Liliputing 
 
 ## Quickstart
 
+**Prerequisites:**
+- Debian 12 (bookworm) installed on the device — via USB stick or `debootstrap` from an existing Linux
+- Network (USB Ethernet or USB WiFi — internal Intel 7265 does NOT work, see [Is this your device?](#is-this-your-device))
+- Kernel 6.12+ from `bookworm-backports` (the SOF ES8336 audio path is not in the stock 6.1 kernel)
+
+**Install:**
+
 ```bash
-# This guide assumes you have SSH access to the device.
-# See docs/installation.md for full Debian install instructions.
+# 1. Backports kernel (needed for audio)
+sudo apt install -t bookworm-backports linux-image-amd64
+sudo reboot
 
-# 1. Clone this repo on the laptop
-git clone https://github.com/YOUR_USER/x836-linux-guide.git
+# 2. Clone and inspect
+git clone https://github.com/Jok0ne/x836-linux-guide.git
 cd x836-linux-guide
+sudo ./setup.sh --dry-run   # prints every action, changes nothing
 
-# 2. Run the setup
+# 3. Apply
 sudo ./setup.sh
 ```
+
+**What `setup.sh` does** (all idempotent, safe to re-run):
+
+1. Detects the board (warns if you're not on an X836)
+2. Copies `fix-audio.sh`, `fix-rotation.sh`, `mouse-button-fix.py`, `lid.sh` → `/usr/local/bin/`
+3. Installs configs: udev hwdb for mouse-button scancodes, `iwlwifi` blacklist, logind lid-policy, systemd-sleep disable
+4. Creates + enables two systemd services: `x836-fix-audio`, `x836-mouse-button-fix`
+5. Wires the lid script via `acpid`
+6. Prints the **manual** follow-up steps (GRUB edits, Phosh autostart, USB WiFi DKMS, packages) — it won't touch GRUB or `/etc/default/*` for you.
+
+**After reboot you get:**
+
+```
+boot time:  ~27 s (vs. ~2 min stock)
+audio:      speaker works, HDMI does not
+rotation:   portrait panel displayed landscape (via Mutter DBus)
+trackpoint: left/right click work, speed-capped + damped
+lid close:  screen off + CPU powersave + BT off (reversed on open)
+wifi:       use USB RTL8812BU; internal Intel 7265 stays blacklisted
+```
+
+**If something breaks →** see [Troubleshooting](#troubleshooting), or open an issue.
 
 ## What works / what doesn't
 
@@ -236,21 +291,49 @@ Default Debian 12 boot: **~2 minutes**. After optimization: **~27 seconds**.
 | `GRUB_RECORDFAIL_TIMEOUT=0` | prevents 30 s recordfail wait |
 | `chmod -x /etc/grub.d/30_os-prober` | belt and suspenders |
 
-## Hardware deep-dive
+## Why this device is weird
 
-The X836 board is based on an Intel tablet/convertible reference design. The ACPI tables define many devices that are **not physically populated**:
+This isn't an ordinary cheap laptop. It's the **digital ghost of a much more ambitious device** that Chinese assemblers stripped down and sold under a dozen brand stickers. If you open up its firmware, you find fingerprints of something that was supposed to be a full-featured convertible tablet.
 
-| Defined in ACPI | Chip | Actually present? |
-|---|---|---|
-| GPS | BCM4752 | No |
-| NFC | NXP NPC100 | No |
-| Fingerprint | FS4304 | No |
-| LTE modem | unknown | No |
-| USB Type-C | USBC000 | No |
-| Thermistors (SEN1–3) | INT3403 | BIOS disabled |
-| Skin thermistor (SEN4) | INT3403 | **Yes** |
+### The Intel reference-design origin
 
-The board has **215 GPIO lines**, 13 I²C buses, 3 SPI buses, and 4 UARTs — most unused. A BIOS dump is available for RE work (see `docs/bios-re.md`).
+The BIOS string `X836_A_A25_M4U4P0E1C1S3P1A3R1F0W5T6_Intel3D_LM084` decodes to an **Intel tablet/convertible reference platform**, related to the Chuwi LapBook family. `X836` is the board, `Intel3D` is the Gemini Lake platform, and that opaque `M4U4P0...` string is a feature-flag map — with **zero hits anywhere on the internet**. Whoever assembles this doesn't show up in search.
+
+### The ACPI ghost devices
+
+The ACPI tables still describe the full reference design. The hardware they describe is mostly **not there** — the assemblers cheaped out and populated only the essentials.
+
+| Defined in ACPI | Chip | Actually present? | Evidence |
+|---|---|---|---|
+| GPS | Broadcom BCM4752 | ✗ | ACPI `_STA = 0` |
+| NFC | NXP NPC100 | ✗ | no I²C response at `0x29` |
+| Fingerprint | FS4304 | ✗ | ACPI `_STA = 0` |
+| LTE modem | unknown | ✗ | no PCIe device at RP05 |
+| USB Type-C | USBC000 | ✗ | ACPI `_STA = 0` |
+| Secondary touchpad | ALPS0001 TPD0 | ✗ | ACPI `_STA = 0` |
+| Thermistors SEN1–3 | INT3403 | ✗ | BIOS-disabled |
+| Skin thermistor SEN4 | INT3403 | ✓ | `thermal_zone1` is live |
+
+Scan the I²C buses and you find the **digital ghosts** of a device that could have been.
+
+### The silicon overkill
+
+For a plastic 7-inch laptop with 4 keys of quirks, the SoC exposes:
+
+- **215 GPIO lines** across 4 gpio-chips (`INT3453`)
+- **13 I²C buses** (8× DesignWare, 1× SMBus, 4× GPU DDC)
+- **3 SPI buses**, **4 UARTs**
+- All of which go mostly unused
+
+### The locked BIOS
+
+AMI Aptio V, only 4 tabs visible (Main / Security / Boot / Save & Exit). The **Advanced** tab is there in the firmware — we dumped the chip via `flashrom` — but every keyboard shortcut that normally reveals it (`Ctrl+F1`, `Alt+F1`, `Shift+F1`) is disabled. Fix path: `UEFITool` → IFR extract → `setup_var.efi`. That's probably also where the D3cold WiFi bug gets fixed.
+
+### Why it matters
+
+This board gets sold under **Topton · TOPOSH · KAISERINC · GTZS · WOPOW · Acogedor · Yoidesu · "A7"** and more. The BIOS reports "Default string" for vendor/product/manufacturer. **Nobody knows who actually makes it.** That's unusual — most hardware is at least identified by its OEM. This one is a rebadge chain with no known origin.
+
+If you're holding one of these, you're holding a small mystery. This guide's job is to let you use it anyway.
 
 ## Troubleshooting
 
