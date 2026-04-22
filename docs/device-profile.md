@@ -70,7 +70,6 @@
 - [ ] WiFi driver: `rtl88x2bu` via DKMS (`git clone https://github.com/morrownr/88x2bu-20210702.git`)
 - [ ] `nmcli device wifi connect "<YOUR_SSID>" password "<YOUR_PASSWORD>"`
 - [ ] Blacklist broken internal WiFi: `/etc/modprobe.d/blacklist-iwlwifi.conf` (iwlwifi + iwlmvm)
-- [ ] (optional) Tailscale with auto-join via pre-auth key
 
 ### Services to disable (boot speed)
 - [ ] Mask `networking.service` (saves ~60 s!)

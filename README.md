@@ -22,7 +22,8 @@
   <a href="#the-fixes">Fixes</a> ·
   <a href="#why-this-device-is-weird">Why it's weird</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
-  <a href="#references">Refs</a>
+  <a href="#related">Related</a> ·
+  <a href="#contributing">Contribute</a>
 </p>
 
 ---
