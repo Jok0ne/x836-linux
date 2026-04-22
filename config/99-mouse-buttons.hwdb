@@ -1,0 +1,6 @@
+# X836 TrackPoint mouse button remap
+# Left: KEY_KP5 (0x4C) -> BTN_LEFT
+# Right: KEY_COMPOSE (0xDD) -> BTN_RIGHT
+evdev:input:b0011v0001p0001*
+ KEYBOARD_KEY_4c=btn_left
+ KEYBOARD_KEY_dd=btn_right
