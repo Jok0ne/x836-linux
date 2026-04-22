@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="docs/header.jpg" alt="x836-linux" width="100%">
+  <img src="docs/header.jpg" alt="x836-linux — Debian 12 + Phosh on the X836 / Topton L4 mini pocket laptop" width="100%">
 </p>
+
+<h1 align="center">x836-linux — Debian 12 + Phosh setup guide for the X836 / Topton L4 mini pocket laptop</h1>
 
 <h3 align="center">Complete Linux setup guide for the X836 7-inch pocket laptop<br><sub>(AliExpress / Topton / TOPOSH / KAISERINC / Acogedor / Yoidesu / WOPOW / "A7" — same hardware, dozens of stickers)</sub></h3>
 
