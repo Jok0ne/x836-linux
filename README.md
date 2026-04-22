@@ -67,9 +67,9 @@ Despite all this, with the right fixes, it makes a surprisingly good little Linu
 ## The device
 
 <p align="center">
-  <img src="docs/device.jpg" alt="X836 pocket laptop — AI-rendered preview" width="280">
+  <img src="docs/device.jpg" alt="X836 pocket laptop running Kali Linux outdoors" width="420">
   <br>
-  <sub><i>AI-rendered preview (echte Geräte-Fotos willkommen — PR welcome)</i></sub>
+  <sub><i>The actual unit — Kali boot screen in the garden. Photo EXIF stripped.</i></sub>
 </p>
 
 | | |
