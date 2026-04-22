@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/header.jpg" alt="x836-linux-guide" width="100%">
+  <img src="docs/header.jpg" alt="x836-linux" width="100%">
 </p>
 
 <h3 align="center">Complete Linux setup guide for the X836 7-inch pocket laptop<br><sub>(AliExpress / Topton / TOPOSH / KAISERINC / Acogedor / Yoidesu / WOPOW / "A7" — same hardware, dozens of stickers)</sub></h3>
@@ -41,7 +41,7 @@ This repo turns the **X836 7-inch pocket laptop** (aka Topton L4 / GTZS / WOPOW 
 
 ```bash
 sudo apt install -t bookworm-backports linux-image-amd64   # SOF audio needs a newer kernel
-git clone https://github.com/Jok0ne/x836-linux-guide.git && cd x836-linux-guide
+git clone https://github.com/Jok0ne/x836-linux.git && cd x836-linux
 sudo ./setup.sh --dry-run   # see what will change
 sudo ./setup.sh             # apply everything
 ```
@@ -136,8 +136,8 @@ sudo apt install -t bookworm-backports linux-image-amd64
 sudo reboot
 
 # 2. Clone and inspect
-git clone https://github.com/Jok0ne/x836-linux-guide.git
-cd x836-linux-guide
+git clone https://github.com/Jok0ne/x836-linux.git
+cd x836-linux
 sudo ./setup.sh --dry-run   # prints every action, changes nothing
 
 # 3. Apply
